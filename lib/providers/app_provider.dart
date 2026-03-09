@@ -3,10 +3,44 @@ import '../models/service.dart';
 import '../models/barber.dart';
 import '../models/appointment.dart';
 import '../models/loyalty.dart';
+import '../services/notification_service.dart';
 
 class AppProvider extends ChangeNotifier {
   int _currentTab = 0;
   ThemeMode _themeMode = ThemeMode.dark;
+  bool _notificationsEnabled = false;
+
+  bool get notificationsEnabled => _notificationsEnabled;
+
+  /// Requests permission and, if granted, schedules reminders for all
+  /// existing upcoming appointments. Returns true if permission was granted.
+  Future<bool> enableNotifications() async {
+    final granted = await NotificationService.requestPermission();
+    if (granted) {
+      _notificationsEnabled = true;
+      await _scheduleAllUpcoming();
+      notifyListeners();
+    }
+    return granted;
+  }
+
+  void disableNotifications() {
+    _notificationsEnabled = false;
+    NotificationService.cancelAll();
+    notifyListeners();
+  }
+
+  Future<void> _scheduleAllUpcoming() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    for (final a in _appointments) {
+      final apptDay = DateTime(a.date.year, a.date.month, a.date.day);
+      if (a.status == AppointmentStatus.confirmed &&
+          apptDay.compareTo(today) >= 0) {
+        await NotificationService.scheduleReminders(a);
+      }
+    }
+  }
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
@@ -123,13 +157,17 @@ class AppProvider extends ChangeNotifier {
         _selectedDate != null &&
         _selectedTime != null) {
       final service = _selectedService!;
-      _appointments.add(Appointment(
+      final appointment = Appointment(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         service: service,
         barber: _selectedBarber,
         date: _selectedDate!,
         time: _selectedTime!,
-      ));
+      );
+      _appointments.add(appointment);
+      if (_notificationsEnabled) {
+        NotificationService.scheduleReminders(appointment);
+      }
       _awardPoints(
         (service.price * 10).toInt(),
         service.name,
@@ -158,6 +196,9 @@ class AppProvider extends ChangeNotifier {
         time: _appointments[index].time,
         status: AppointmentStatus.cancelled,
       );
+      if (_notificationsEnabled) {
+        NotificationService.cancelReminders(id);
+      }
       notifyListeners();
     }
   }

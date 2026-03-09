@@ -33,8 +33,10 @@ class AboutScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Appearance toggle ──────────────────────────────
+            // ── Settings ───────────────────────────────────────
             _AppearanceCard(),
+            const SizedBox(height: 10),
+            _NotificationsCard(),
             const SizedBox(height: 24),
 
             // ── Shop Header ────────────────────────────────────
@@ -378,6 +380,97 @@ class AboutScreen extends StatelessWidget {
 }
 
 // ── Appearance toggle card ──────────────────────────────────────
+
+class _NotificationsCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<AppProvider>();
+    final enabled = provider.notificationsEnabled;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final upcomingCount = provider.appointments.where((a) {
+      final apptDay = DateTime(a.date.year, a.date.month, a.date.day);
+      return a.status.name == 'confirmed' && apptDay.compareTo(today) >= 0;
+    }).length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.appColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.appColors.divider),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                enabled
+                    ? Icons.notifications_active
+                    : Icons.notifications_off_outlined,
+                color: AppTheme.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Reminders',
+                    style: TextStyle(
+                        color: context.appColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15),
+                  ),
+                  Text(
+                    enabled
+                        ? '$upcomingCount upcoming appointment${upcomingCount == 1 ? '' : 's'} scheduled'
+                        : 'Get notified 24h and 1h before',
+                    style: TextStyle(
+                        color: context.appColors.textSecondary,
+                        fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: enabled,
+              onChanged: (value) async {
+                if (value) {
+                  final granted = await provider.enableNotifications();
+                  if (!granted && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                            'Permission denied — enable notifications in device settings.'),
+                        backgroundColor: context.appColors.surface,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } else {
+                  provider.disableNotifications();
+                }
+              },
+              activeColor: AppTheme.primary,
+              activeTrackColor: AppTheme.primary.withOpacity(0.3),
+              inactiveThumbColor: context.appColors.textSecondary,
+              inactiveTrackColor: context.appColors.divider,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class _AppearanceCard extends StatelessWidget {
   @override

@@ -148,12 +148,55 @@ Appointment({ id, service, barber?, date, time, status })
 Reward({ id, title, description, pointsCost, emoji, value })
 ```
 
+## Notification service
+
+`lib/services/notification_service.dart` — static service, no instantiation needed.
+
+```dart
+await NotificationService.init();                  // called once in main()
+await NotificationService.requestPermission();     // returns bool
+await NotificationService.scheduleReminders(appt); // schedules 24h + 1h reminders
+await NotificationService.cancelReminders(id);     // cancels both for an appointment
+await NotificationService.cancelAll();             // cancels everything
+```
+
+- Reminders are scheduled at **T-24h** and **T-1h** before the appointment time. Past-due times are silently skipped.
+- Notification IDs are derived from `appointmentId.hashCode` to stay stable across calls.
+- Web is a no-op (`kIsWeb` guard at the top of every method).
+- `AppProvider` has `notificationsEnabled`, `enableNotifications()` (async, requests permission + schedules all upcoming), and `disableNotifications()` (cancels all).
+- `confirmBooking()` and `cancelAppointment()` in `AppProvider` automatically schedule/cancel when `notificationsEnabled` is true.
+
+### Required platform setup (not in repo)
+
+**Android** — add to `android/app/src/main/AndroidManifest.xml` inside `<manifest>`:
+```xml
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+<uses-permission android:name="android.permission.VIBRATE"/>
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+```
+Also add the receivers inside `<application>`:
+```xml
+<receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+<receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+  <intent-filter>
+    <action android:name="android.intent.action.BOOT_COMPLETED"/>
+    <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+  </intent-filter>
+</receiver>
+```
+
+**iOS** — no extra config needed; permissions are requested at runtime via `requestPermission()`.
+
 ## Dependencies
 
 ```yaml
-provider: ^6.1.2       # state management
-google_fonts: ^6.2.1   # Playfair Display (headings), Lato (body)
-intl: ^0.19.0          # date formatting
+provider: ^6.1.2                    # state management
+google_fonts: ^6.2.1                # Playfair Display (headings), Lato (body)
+intl: ^0.19.0                       # date formatting
+flutter_local_notifications: ^17.2.3 # push notification scheduling
+timezone: ^0.9.4                    # timezone-aware scheduling
+flutter_timezone: ^1.0.4            # detects device local timezone
 ```
 
 ## Design conventions

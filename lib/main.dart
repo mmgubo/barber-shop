@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
 import 'screens/main_screen.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
   runApp(
     ChangeNotifierProvider(
       create: (_) => AppProvider(),
