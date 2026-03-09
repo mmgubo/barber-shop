@@ -1,6 +1,6 @@
 # The Sharp Edge — Barber Shop App
 
-A cross-platform Flutter app for a premium barber shop business. Features online booking, loyalty rewards, appointment management, and a dark/light theme toggle.
+A cross-platform Flutter app for a premium barber shop business. Features online booking, loyalty rewards, appointment management, push notification reminders, and a dark/light theme toggle.
 
 ## Screenshots
 
@@ -35,13 +35,14 @@ A cross-platform Flutter app for a premium barber shop business. Features online
 | **Book** | 4-step booking wizard — service → barber → date/time → confirmation |
 | **My Bookings** | Upcoming, past, and cancelled appointments with cancel/reschedule actions |
 | **Gallery** | Filterable photo grid of haircut styles (Fades, Classic, Beard, Color) |
-| **About** | Business hours, contact info, map, social links, and theme toggle |
+| **About** | Business hours, contact info, map, social links, theme toggle, and notification settings |
 
 ## Features
 
 - **Booking wizard** — select service, choose a barber (or any available), pick a date from a 14-day scroll, select a time slot, then confirm
 - **Loyalty rewards** — earn 10 pts per $1 spent; Bronze / Silver / Gold / Platinum tiers; redeem points for free services and discounts
 - **My Appointments** — tabbed view of upcoming, past, and cancelled bookings; cancel with confirmation dialog; rebook/reschedule in one tap
+- **Push notifications** — opt-in reminders at 24 hours and 1 hour before each appointment; auto-scheduled on booking, auto-cancelled on cancellation; toggle in the About screen
 - **Dark / Light theme** — toggle in the About screen; smooth animated transition across the whole app
 - **Sample data** — pre-loaded appointments and loyalty history so every screen is populated on first launch
 
@@ -52,6 +53,7 @@ A cross-platform Flutter app for a premium barber shop business. Features online
 - **Google Fonts** — Playfair Display (headings) + Lato (body)
 - **Intl** — date formatting
 - **ThemeExtension** — custom `AppColors` for clean dark/light color switching
+- **flutter_local_notifications** — timezone-aware scheduled notifications (Android & iOS)
 
 ## Project Structure
 
@@ -66,7 +68,9 @@ lib/
 │   ├── appointment.dart       # Appointment model + status enum
 │   └── loyalty.dart           # LoyaltyTier, LoyaltyTransaction, Reward models
 ├── providers/
-│   └── app_provider.dart      # Central state: navigation, booking, loyalty, theme
+│   └── app_provider.dart      # Central state: navigation, booking, loyalty, theme, notifications
+├── services/
+│   └── notification_service.dart  # Schedules/cancels local push notifications
 └── screens/
     ├── main_screen.dart        # Bottom nav wrapper with badge counter
     ├── home_screen.dart
@@ -97,4 +101,33 @@ Runs on Android, iOS, Web, and Desktop out of the box.
 provider: ^6.1.2
 google_fonts: ^6.2.1
 intl: ^0.19.0
+flutter_local_notifications: ^17.2.3
+timezone: ^0.9.4
+flutter_timezone: ^1.0.4
 ```
+
+### Platform setup for notifications
+
+Push notifications require a small amount of native config before they work on device.
+
+**Android** — add to `android/app/src/main/AndroidManifest.xml`:
+```xml
+<!-- inside <manifest> -->
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+<uses-permission android:name="android.permission.VIBRATE"/>
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+
+<!-- inside <application> -->
+<receiver android:exported="false"
+    android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"/>
+<receiver android:exported="false"
+    android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+  <intent-filter>
+    <action android:name="android.intent.action.BOOT_COMPLETED"/>
+    <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+  </intent-filter>
+</receiver>
+```
+
+**iOS** — no extra config needed; the app requests permission at runtime when the toggle is turned on.
