@@ -2,6 +2,30 @@
 
 A cross-platform Flutter app for a premium barber shop business. Features online booking, loyalty rewards, appointment management, and a dark/light theme toggle.
 
+## Screenshots
+
+### Dark Mode
+
+| Home | Services | Booking |
+|------|----------|---------|
+| ![Home](screenshots/home_dark.png) | ![Services](screenshots/services_dark.png) | ![Booking](screenshots/booking_dark.png) |
+
+| My Bookings | Loyalty | Gallery | About |
+|-------------|---------|---------|-------|
+| ![My Bookings](screenshots/appointments_dark.png) | ![Loyalty](screenshots/loyalty_dark.png) | ![Gallery](screenshots/gallery_dark.png) | ![About](screenshots/about_dark.png) |
+
+### Light Mode
+
+| Home | Services | Booking |
+|------|----------|---------|
+| ![Home](screenshots/home_light.png) | ![Services](screenshots/services_light.png) | ![Booking](screenshots/booking_light.png) |
+
+| My Bookings | Loyalty | Gallery | About |
+|-------------|---------|---------|-------|
+| ![My Bookings](screenshots/appointments_light.png) | ![Loyalty](screenshots/loyalty_light.png) | ![Gallery](screenshots/gallery_light.png) | ![About](screenshots/about_light.png) |
+
+> **To add screenshots:** run the app, capture each screen, and save the images to the `screenshots/` folder using the filenames above.
+
 ## Screens
 
 | Screen | Description |
